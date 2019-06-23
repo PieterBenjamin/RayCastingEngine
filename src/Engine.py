@@ -147,7 +147,7 @@ def cast(x, y, angle_calc):
         rise = math.sin(math.radians(dir_in_array))
         run = math.cos(math.radians(dir_in_array))
 
-        coordinates = find_intersection_coordinates(x / slice_size, y / slice_size, rise, run)
+        coordinates = find_intersection_coordinates(x / slice_size, y / slice_size, rise/10, run/10)
         draw.rect(screen, SQUARE_COLOR, coordinates)
 
 
@@ -173,15 +173,13 @@ def find_intersection_coordinates(x, y, rise, run):
         y_index = int(y)
 
         if level_map[y_index][x_index] != 0:
-            """ 
-            For debugging
             draw.line(
                 screen,
                 RAY_COLOR,
                 (orig_x * slice_size, orig_y * slice_size),
                 (x_index * slice_size, y_index * slice_size)
             )
-            """
+
             return (x_index * slice_size), (y_index * slice_size), slice_size, slice_size
         x += run
         y += rise
