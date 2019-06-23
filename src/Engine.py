@@ -9,16 +9,19 @@ playing = True
 FOV = 90
 slice_size = 90  # width of each slice on the screen
 # this is laid out like an image (positive y is down)
-level_map = [[1, 1, 1, 1, 1, 1, 1, 1],
-             [1, 0, 0, 0, 0, 0, 0, 1],
-             [1, 0, 0, 1, 0, 0, 0, 1],
-             [1, 0, 0, 1, 0, 0, 0, 1],
-             [1, 0, 0, 1, 0, 0, 0, 1],
-             [1, 1, 1, 1, 1, 1, 1, 1]]
+level_map = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 screen_hscale = len(level_map[0])
 screen_vscale = len(level_map)
-move_speed = float(screen_hscale)  # how much WASD moves the camera
-pan_speed = 10  # how much the L/R arrow keys will pan
+move_speed = 2 * float(screen_hscale)  # how much WASD moves the camera
+pan_speed = 20  # how much the L/R arrow keys will pan
 moving_f = False  # moving forward
 moving_r = False  # moving right
 moving_b = False  # moving backward
@@ -142,7 +145,7 @@ def cast(x, y, angle_calc):
     for ray in range(int(FOV / 2)):
         dir_in_array = angle_calc(ray) % 360
         rise = math.sin(math.radians(dir_in_array))
-        run = 0 if (dir_in_array == 90 or dir_in_array == 270) else math.cos(math.radians(dir_in_array))
+        run = math.cos(math.radians(dir_in_array))
 
         coordinates = find_intersection_coordinates(x / slice_size, y / slice_size, rise, run)
         draw.rect(screen, SQUARE_COLOR, coordinates)
