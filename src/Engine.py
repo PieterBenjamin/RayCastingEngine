@@ -177,7 +177,7 @@ def find_intersection_coordinates(x, y, rise, run):
                 screen,
                 RAY_COLOR,
                 (orig_x * slice_size, orig_y * slice_size),
-                (x_index * slice_size, y_index * slice_size)
+                (x * slice_size, y * slice_size)
             )
 
             return (x_index * slice_size), (y_index * slice_size), slice_size, slice_size
