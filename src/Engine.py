@@ -31,7 +31,7 @@ camera = Camera2D(x=screen_hscale/2*slice_size, y=screen_h-slice_size-1,
 """ Customization variables (play with these) """
 top_down = True
 move_speed = 2 * float(screen_hscale)  # how much WASD moves the camera
-pan_speed = 1  # how much the L/R arrow keys will pan
+pan_speed = 10  # how much the L/R arrow keys will pan
 ray_length = 600
 FOV = 90
 BACKGROUND = (0, 0, 0)
@@ -83,21 +83,29 @@ def update_camera():
     """
     Updates the camera position/rotation
     """
+    x = camera.get_x()
+    y = camera.get_y()
     angle = camera.get_direction()
     cos_angle = math.cos(math.radians(angle))
     sin_angle = math.sin(math.radians(angle))
 
+    x_increment = (0, move_speed * cos_angle)[moving_f] + \
+                  (0, -move_speed * math.cos(math.radians((angle - 90) % 360)))[moving_r] + \
+                  (0, -move_speed * cos_angle)[moving_b] + \
+                  (0, -move_speed * math.cos(math.radians((angle + 90) % 360)))[moving_l]
+
+    y_increment = (0, move_speed * sin_angle)[moving_f] + \
+                  (0, -move_speed * math.sin(math.radians((angle - 90) % 360)))[moving_r] + \
+                  (0, -move_speed * sin_angle)[moving_b] + \
+                  (0, -move_speed * math.sin(math.radians((angle + 90) % 360)))[moving_l]
+
     camera.increment_x(
-        (0, move_speed * cos_angle)[moving_f] +
-        (0, -move_speed * math.cos(math.radians((angle - 90) % 360)))[moving_r] +
-        (0, -move_speed * cos_angle)[moving_b] +
-        (0, -move_speed * math.cos(math.radians((angle + 90) % 360)))[moving_l]
+        (0, x_increment)[(0 < x + x_increment < screen_hscale * slice_size)
+                         and level_map[int(y/slice_size)][int((x + x_increment) / slice_size)] == 0]
     )
     camera.increment_y(
-        (0, move_speed * sin_angle)[moving_f] +
-        (0, -move_speed * math.sin(math.radians((angle - 90) % 360)))[moving_r] +
-        (0, -move_speed * sin_angle)[moving_b] +
-        (0, -move_speed * math.sin(math.radians((angle + 90) % 360)))[moving_l]
+        (0, y_increment)[(0 < y + y_increment < screen_vscale * slice_size)
+                         and level_map[int((y + y_increment) / slice_size)][int(x/slice_size)] == 0]
     )
     camera.increment_direction(pan_velocity)
 
