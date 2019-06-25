@@ -2,13 +2,7 @@ from pygame import *
 from Camera2D import Camera2D
 import math
 
-# debugging variables
-ray_length = 600
-# Global Variable initialization
-playing = True
-FOV = 90
-slice_size = 90  # width of each slice on the screen
-# this is laid out like an image (positive y is down)
+""" Game state (don't play with these) """
 level_map = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
              [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
              [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -18,30 +12,32 @@ level_map = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
              [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
              [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
              [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+playing = True
+slice_size = 90  # width of each slice on the screen
 screen_hscale = len(level_map[0])
 screen_vscale = len(level_map)
-move_speed = 2 * float(screen_hscale)  # how much WASD moves the camera
-pan_speed = 20  # how much the L/R arrow keys will pan
 moving_f = False  # moving forward
 moving_r = False  # moving right
 moving_b = False  # moving backward
 moving_l = False  # moving left
 pan_velocity = 0  # right is positive, left is negative
-screen_w = float(FOV * screen_hscale)
-screen_h = float(FOV * screen_vscale)
+screen_w = float(slice_size * screen_hscale)
+screen_h = float(slice_size * screen_vscale)
 camera = Camera2D(x=screen_hscale/2*slice_size, y=screen_h-slice_size-1,
                   direction=270,
                   min_x=slice_size, min_y=slice_size,
                   max_x=screen_w-slice_size, max_y=screen_h-slice_size)
+
+""" Customization variables (play with these) """
+top_down = True
+move_speed = 2 * float(screen_hscale)  # how much WASD moves the camera
+pan_speed = 1  # how much the L/R arrow keys will pan
+ray_length = 600
+FOV = 90
 BACKGROUND = (0, 0, 0)
 RAY_COLOR = (255, 0, 0)
 CAMERA_COLOR = (0, 255, 0)
 SQUARE_COLOR = (0, 0, 255)
-
-init()
-
-screen = display.set_mode((int(screen_w), int(screen_h)))
-display.set_caption('Pieter Benjamins Ray Casting Engine')
 
 
 def handle_key_down(e):
@@ -140,7 +136,7 @@ def refresh_screen():
 
 
 def cast(x, y, angle_calc):
-    global screen
+    global screen, top_down
 
     for ray in range(int(FOV / 2)):
         dir_in_array = angle_calc(ray) % 360
@@ -148,10 +144,12 @@ def cast(x, y, angle_calc):
         run = math.cos(math.radians(dir_in_array))
 
         coordinates = find_intersection_coordinates(x / slice_size, y / slice_size, rise/10, run/10)
-        draw.rect(screen, SQUARE_COLOR, coordinates)
+        if top_down:
+            draw.rect(screen, SQUARE_COLOR, coordinates)
 
 
 def find_intersection_coordinates(x, y, rise, run):
+    global top_down
     """
     level_map[y][x]
     @param x:
@@ -173,12 +171,13 @@ def find_intersection_coordinates(x, y, rise, run):
         y_index = int(y)
 
         if level_map[y_index][x_index] != 0:
-            draw.line(
-                screen,
-                RAY_COLOR,
-                (orig_x * slice_size, orig_y * slice_size),
-                (x * slice_size, y * slice_size)
-            )
+            if top_down:
+                draw.line(
+                    screen,
+                    RAY_COLOR,
+                    (orig_x * slice_size, orig_y * slice_size),
+                    (x * slice_size, y * slice_size)
+                )
 
             return (x_index * slice_size), (y_index * slice_size), slice_size, slice_size
         x += run
@@ -200,6 +199,9 @@ def determine_color(distance):
 
 def main():
     global screen, playing, camera
+
+    screen = display.set_mode((int(screen_w), int(screen_h)))
+    display.set_caption('Pieter Benjamin\'s Ray Casting Engine')
 
     while playing:
         # determine what the user wants
