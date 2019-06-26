@@ -23,14 +23,11 @@ moving_l = False  # moving left
 pan_velocity = 0  # right is positive, left is negative
 screen_w = float(slice_size * screen_hscale)
 screen_h = float(slice_size * screen_vscale)
-camera = Camera2D(x=screen_hscale/2*slice_size, y=screen_h-slice_size-1,
-                  direction=270,
-                  min_x=slice_size, min_y=slice_size,
-                  max_x=screen_w-slice_size, max_y=screen_h-slice_size)
+camera = Camera2D(x=screen_hscale/2, y=screen_vscale-1.001, direction=270)
 
 """ Customization variables (play with these) """
 top_down = True
-move_speed = 2 * float(screen_hscale)  # how much WASD moves the camera
+move_speed = 0.2  # how much WASD moves the camera
 pan_speed = 10  # how much the L/R arrow keys will pan
 ray_length = 600
 FOV = 90
@@ -100,12 +97,12 @@ def update_camera():
                   (0, -move_speed * math.sin(math.radians((angle + 90) % 360)))[moving_l]
 
     camera.increment_x(
-        (0, x_increment)[(0 < x + x_increment < screen_hscale * slice_size)
-                         and level_map[int(y/slice_size)][int((x + x_increment) / slice_size)] == 0]
+        (0, x_increment)[(0 < x + x_increment < screen_hscale)
+                         and level_map[int(y)][int((x + x_increment))] == 0]
     )
     camera.increment_y(
-        (0, y_increment)[(0 < y + y_increment < screen_vscale * slice_size)
-                         and level_map[int((y + y_increment) / slice_size)][int(x/slice_size)] == 0]
+        (0, y_increment)[(0 < y + y_increment < screen_vscale)
+                         and level_map[int((y + y_increment))][int(x)] == 0]
     )
     camera.increment_direction(pan_velocity)
 
@@ -123,22 +120,25 @@ def refresh_screen():
     # drawing sight lines
     draw.line(screen,
               (255, 255, 255),
-              (int(x),
-               int(y)),
-              (int(x + ray_length * math.cos(math.radians(direction - (FOV/2)))),
-               int(y + ray_length * math.sin(math.radians(direction - (FOV/2))))))
+              (x * slice_size,
+               y * slice_size),
+              ((x * slice_size) + ray_length * math.cos(math.radians(direction - (FOV/2))),
+               (y * slice_size + ray_length * math.sin(math.radians(direction - (FOV/2))))))
     draw.line(screen,
               (255, 255, 255),
-              (int(x),
-               int(y)),
-              (int(x + ray_length * math.cos(math.radians(direction + (FOV/2)))),
-               int(y + ray_length * math.sin(math.radians(direction + (FOV/2))))))
+              (x * slice_size,
+               y * slice_size),
+              ((x * slice_size) + ray_length * math.cos(math.radians(direction + (FOV/2))),
+               (y * slice_size) + ray_length * math.sin(math.radians(direction + (FOV/2)))))
     # actual drawing portion (very slow)
     cast(x, y, lambda z: direction - z)
     cast(x, y, lambda z: direction + z)
 
     # drawing camera position
-    draw.circle(screen, CAMERA_COLOR, (int(x), int(y)), 5)
+    if top_down:
+        draw.circle(screen, CAMERA_COLOR, (int(x * slice_size), int(y * slice_size)), 5)
+    else:
+        print("fps")
 
     display.update()
 
@@ -147,11 +147,11 @@ def cast(x, y, angle_calc):
     global screen, top_down
 
     for ray in range(int(FOV / 2)):
-        dir_in_array = angle_calc(ray) % 360
-        rise = math.sin(math.radians(dir_in_array))
-        run = math.cos(math.radians(dir_in_array))
+        ray_dir = angle_calc(ray) % 360
+        rise = math.sin(math.radians(ray_dir))
+        run = math.cos(math.radians(ray_dir))
 
-        coordinates = find_intersection_coordinates(x / slice_size, y / slice_size, rise/10, run/10)
+        coordinates = find_intersection_coordinates(x, y, rise/10, run/10)
         if top_down:
             draw.rect(screen, SQUARE_COLOR, coordinates)
 
