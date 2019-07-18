@@ -16,6 +16,7 @@ playing = True
 slice_size = 90  # width of each slice on the screen
 screen_hscale = len(level_map[0])
 screen_vscale = len(level_map)
+max_dist = math.sqrt(pow((screen_hscale - 2), 2) + pow((screen_vscale - 2), 2))
 moving_f = False  # moving forward
 moving_r = False  # moving right
 moving_b = False  # moving backward
@@ -24,11 +25,16 @@ pan_velocity = 0  # right is positive, left is negative
 screen_w = float(slice_size * screen_hscale)
 screen_h = float(slice_size * screen_vscale)
 camera = Camera2D(x=screen_hscale/2, y=screen_vscale-1.001, direction=270)
+ray_num = 0
+
+""" Used in computing the height of a slice """
+m = (screen_h * 0.8)/(1 - max_dist)
+b = screen_h - m
 
 """ Customization variables (play with these) """
-top_down = True
-move_speed = 0.2  # how much WASD moves the camera
-pan_speed = 10  # how much the L/R arrow keys will pan
+top_down = False
+move_speed = 0.1  # how much WASD moves the camera
+pan_speed = 3  # how much the L/R arrow keys will pan
 ray_length = 600
 FOV = 90
 BACKGROUND = (0, 0, 0)
@@ -108,7 +114,7 @@ def update_camera():
 
 
 def refresh_screen():
-    global screen
+    global screen, ray_num
     """
     Updates what is being shown on the screen
     """
@@ -117,43 +123,48 @@ def refresh_screen():
     direction = camera.get_direction()
 
     screen.fill(BACKGROUND)  # resetting screen
-    # drawing sight lines
-    draw.line(screen,
-              (255, 255, 255),
-              (x * slice_size,
-               y * slice_size),
-              ((x * slice_size) + ray_length * math.cos(math.radians(direction - (FOV/2))),
-               (y * slice_size + ray_length * math.sin(math.radians(direction - (FOV/2))))))
-    draw.line(screen,
-              (255, 255, 255),
-              (x * slice_size,
-               y * slice_size),
-              ((x * slice_size) + ray_length * math.cos(math.radians(direction + (FOV/2))),
-               (y * slice_size) + ray_length * math.sin(math.radians(direction + (FOV/2)))))
-    # actual drawing portion (very slow)
-    cast(x, y, lambda z: direction - z)
-    cast(x, y, lambda z: direction + z)
+    ray_num = 45
+    cast(x, y, lambda z: direction - z, lambda r: r - 1)
+    ray_num = 45
+    cast(x, y, lambda z: direction + z, lambda r: r + 1)
 
-    # drawing camera position
     if top_down:
+        # drawing camera position
         draw.circle(screen, CAMERA_COLOR, (int(x * slice_size), int(y * slice_size)), 5)
-    else:
-        print("fps")
-
+        # drawing sight lines
+        draw.line(screen,
+                  (255, 255, 255),
+                  (x * slice_size,
+                   y * slice_size),
+                  ((x * slice_size) + ray_length * math.cos(math.radians(direction - (FOV / 2))),
+                   (y * slice_size + ray_length * math.sin(math.radians(direction - (FOV / 2))))))
+        draw.line(screen,
+                  (255, 255, 255),
+                  (x * slice_size,
+                   y * slice_size),
+                  ((x * slice_size) + ray_length * math.cos(math.radians(direction + (FOV / 2))),
+                   (y * slice_size) + ray_length * math.sin(math.radians(direction + (FOV / 2)))))
     display.update()
 
 
-def cast(x, y, angle_calc):
-    global screen, top_down
+def cast(x, y, angle_calc, ray_inc):
+    global screen, top_down, ray_num
 
-    for ray in range(int(FOV / 2)):
+    for ray in range(int(FOV / 2),):
         ray_dir = angle_calc(ray) % 360
+        #  The following two variables represent the distance from the camera to the
+        #  next horizontal (dy) and vertical (dx) grid line
+        dy = -(y % 1) if math.sin(math.radians(ray_dir)) < 0 else 1 - (y % 1)
+        dx = -(x % 1) if math.cos(math.radians(ray_dir)) < 0 else 1 - (x % 1)
         rise = math.sin(math.radians(ray_dir))
         run = math.cos(math.radians(ray_dir))
 
         coordinates = find_intersection_coordinates(x, y, rise/10, run/10)
         if top_down:
             draw.rect(screen, SQUARE_COLOR, coordinates)
+        else:
+            print_wall(ray_num, math.sqrt(pow((x - (coordinates[0]/slice_size)), 2) + pow((y - coordinates[1]/slice_size), 2)))
+        ray_num = ray_inc(ray_num)
 
 
 def find_intersection_coordinates(x, y, rise, run):
@@ -170,7 +181,8 @@ def find_intersection_coordinates(x, y, rise, run):
         The amount to increment @x
 
     Starting from (@x, @y), finds the coordinates of
-    the first intersection in the level map.
+    the first intersection in the level map, scaled to 
+    the appropriate location on the screen.
     """
     orig_x = x
     orig_y = y
@@ -187,7 +199,7 @@ def find_intersection_coordinates(x, y, rise, run):
                     (x * slice_size, y * slice_size)
                 )
 
-            return (x_index * slice_size), (y_index * slice_size), slice_size, slice_size
+            return (x * slice_size), (y * slice_size), slice_size, slice_size
         x += run
         y += rise
 
@@ -199,15 +211,18 @@ def print_wall(column_num, scaled_distance):
     Given a column number and a distance to scale to, prints a wall
     to the screen at the scaled distance (with appropriate color).
     """
+    h = (m * scaled_distance) + b
+    draw.rect(screen, determine_color(scaled_distance), (column_num * (screen_w/FOV), (screen_h - h)/2, screen_w/FOV, h))
 
 
 def determine_color(distance):
-    return BACKGROUND
+    return 0, 0, (255 - 255*(distance/max_dist))
 
 
 def main():
     global screen, playing, camera
 
+    init()
     screen = display.set_mode((int(screen_w), int(screen_h)))
     display.set_caption('Pieter Benjamin\'s Ray Casting Engine')
 
@@ -226,6 +241,5 @@ def main():
 
 
 if __name__ == '__main__':
-    init()
     main()
     quit()
