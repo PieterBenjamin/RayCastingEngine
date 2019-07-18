@@ -9,7 +9,7 @@ related to keyboard listeners or graphics panels.
 ![alt text](https://github.com/PieterBenjamin/RayCastingEngine/blob/master/imgs/RayCastingSampleTopDown)
 
 Because this was intended as a short project to understand the basics of rendering,  
-I did not take great care to avoid all the possible errors. My method of calculating
+I did not take great care to avoid all the possible errors. My method of calculating  
 intersections can be slow and inaccurate, and leads to a fisheye effect. These could  
 be avoided, but I decided instead to keep this project short and make approximations.  
 You can see the effect of this in the second screenshot (around the edges). However,  
